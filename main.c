@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-int arr[3];
+
+int dimension[3];
+int start;
 
 void remove_new_line(char *str);
 
@@ -10,10 +12,11 @@ void remove_space(char *str);
 
 void save_dimension(char *str);
 
+void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]]);
+
 int main()
 {
     FILE *ptr;
-    int sudoku, tool, arz;
     char string[1000];
     ptr = fopen("test.txt", "r");
 
@@ -33,10 +36,40 @@ int main()
     remove_new_line(string);
     remove_space(string);
     string[strlen(string) - 1] = '\0';
-    printf("%s \n", string);
+
     save_dimension(string);
+    char sudoku[dimension[0]][dimension[0]];
+
+    set_sudoku_array(string, sudoku);
+
+    // for (int i = 0; i < 9; i++)
+    // {
+    //     for (int j = 0; j < 9; j++)
+    //     {
+    //         printf("%c ", sudoku[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
     return 0;
+}
+
+void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]])
+{
+    int i = 0, j = 0, k;
+
+    for (k = start; str[k]; k++)
+    {
+        if (str[k] == '#')
+        {
+            j = 0;
+            i++;
+            continue;
+        }
+
+        sudoku[i][j] = str[k];
+        j++;
+    }
 }
 
 void save_dimension(char *str)
@@ -48,7 +81,7 @@ void save_dimension(char *str)
     {
         if (str[i] == '*')
         {
-            arr[count] = number;
+            dimension[count] = number;
             number = 0;
             count++;
             continue;
@@ -56,7 +89,8 @@ void save_dimension(char *str)
 
         if (!isdigit(str[i]) && str[i] != '*')
         {
-            arr[count] = number;
+            dimension[count] = number;
+            start = i;
             break;
         }
         number += str[i] - '0' + number * 10;
