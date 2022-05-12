@@ -10,6 +10,7 @@
 #define MYFIFO1 "/tmp/myfifo1"
 #define MYFIFO2 "/tmp/myfifo2"
 #define MYFIFO3 "/tmp/myfifo3"
+#define MYFIFO4 "/tmp/myfifo4"
 
 void remove_new_line(char *str);
 
@@ -43,9 +44,9 @@ int main()
     mkfifo(MYFIFO1, 0666);
     mkfifo(MYFIFO2, 0666);
     mkfifo(MYFIFO3, 0666);
+    mkfifo(MYFIFO4, 0666);
 
     pid_t decoder, sotoon, satr, mostatil;
-    // printf("%s\n", string);
 
     decoder = fork();
     if (decoder == 0)
@@ -59,13 +60,19 @@ int main()
         char *args[] = {"./sotoon", NULL};
         execvp(args[0], args);
     }
+    satr = fork();
+    if (satr == 0)
+    {
+        char *args[] = {"./satr", NULL};
+        execvp(args[0], args);
+    }
 
     fd1 = open(MYFIFO1, O_WRONLY);
     write(fd1, string, strlen(string) + 1);
     close(fd1);
 
     char str[20];
-    fd2 = open(MYFIFO3, O_RDONLY);
+    fd2 = open(MYFIFO4, O_RDONLY);
     int index = read(fd2, str, sizeof(str));
     str[index] = '\0';
     close(fd2);

@@ -9,7 +9,7 @@
 #include <ctype.h>
 
 #define MYFIFO2 "/tmp/myfifo2"
-#define MYFIFO3 "/tmp/myfifo3"
+#define MYFIFO4 "/tmp/myfifo4"
 
 int dimension[3];
 int start;
@@ -18,7 +18,7 @@ void save_dimension(char *str);
 
 void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]]);
 
-int check_sotoon(char sudoku[dimension[0]][dimension[0]]);
+int check_satr(char sudoku[dimension[0]][dimension[0]]);
 
 int main()
 {
@@ -35,7 +35,7 @@ int main()
 
     set_sudoku_array(str, sudoku);
 
-    int sw = check_sotoon(sudoku);
+    int sw = check_satr(sudoku);
 
     // for (int i = 0; i < 9; i++)
     // {
@@ -46,8 +46,8 @@ int main()
     //     printf("\n");
     // }
 
-    FILE *fdecoder = fopen("sotoon.txt", "a");
-    fd2 = open(MYFIFO3, O_WRONLY);
+    FILE *fdecoder = fopen("satr.txt", "a");
+    fd2 = open(MYFIFO4, O_WRONLY);
     if (sw == 0)
     {
         fprintf(fdecoder, "%s\n", "true");
@@ -64,7 +64,7 @@ int main()
     close(fd2);
 }
 
-int check_sotoon(char sudoku[dimension[0]][dimension[0]])
+int check_satr(char sudoku[dimension[0]][dimension[0]])
 {
     int sw = 0;
     for (int i = 0; i < dimension[0]; i++)
@@ -75,7 +75,7 @@ int check_sotoon(char sudoku[dimension[0]][dimension[0]])
             {
                 if (j != k)
                 {
-                    int diff = sudoku[i][j] - sudoku[i][k];
+                    int diff = sudoku[j][i] - sudoku[j][i];
                     if (diff == 0 || diff == -20 || diff == 20)
                     {
                         sw = 1;
