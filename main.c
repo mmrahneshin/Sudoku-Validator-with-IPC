@@ -53,13 +53,19 @@ int main()
         char *args[] = {"./decoder", NULL};
         execvp(args[0], args);
     }
+    sotoon = fork();
+    if (sotoon == 0)
+    {
+        char *args[] = {"./sotoon", NULL};
+        execvp(args[0], args);
+    }
 
     fd1 = open(MYFIFO1, O_WRONLY);
     write(fd1, string, strlen(string) + 1);
     close(fd1);
 
-    char str[2000];
-    fd2 = open(MYFIFO2, O_RDONLY);
+    char str[20];
+    fd2 = open(MYFIFO3, O_RDONLY);
     int index = read(fd2, str, sizeof(str));
     str[index] = '\0';
     close(fd2);

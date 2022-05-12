@@ -11,13 +11,6 @@
 #define MYFIFO1 "/tmp/myfifo1"
 #define MYFIFO2 "/tmp/myfifo2"
 
-int dimension[3];
-int start;
-
-void save_dimension(char *str);
-
-void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]]);
-
 int main()
 {
     char ch;
@@ -60,20 +53,6 @@ int main()
 
     // Save the Result in file
 
-    save_dimension(str);
-    char sudoku[dimension[0]][dimension[0]];
-
-    set_sudoku_array(str, sudoku);
-
-    // for (int i = 0; i < 9; i++)
-    // {
-    //     for (int j = 0; j < 9; j++)
-    //     {
-    //         printf("%c ", sudoku[i][j]);
-    //     }
-    //     printf("\n");
-    // }
-
     FILE *fdecoder = fopen("decoder.txt", "a");
 
     fprintf(fdecoder, "%s\n", str);
@@ -83,46 +62,4 @@ int main()
     fd2 = open(MYFIFO2, O_WRONLY);
     write(fd2, str, strlen(str) + 1);
     close(fd2);
-}
-
-void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]])
-{
-    int i = 0, j = 0, k;
-
-    for (k = start; str[k]; k++)
-    {
-        if (str[k] == '#')
-        {
-            j = 0;
-            i++;
-            continue;
-        }
-        sudoku[i][j] = str[k];
-        j++;
-    }
-}
-
-void save_dimension(char *str)
-{
-    int i;
-    int number = 0;
-    int count = 0;
-    for (i = 0; str[i]; i++)
-    {
-        if (str[i] == '*')
-        {
-            dimension[count] = number;
-            number = 0;
-            count++;
-            continue;
-        }
-
-        if (!isdigit(str[i]) && str[i] != '*')
-        {
-            dimension[count] = number;
-            start = i;
-            break;
-        }
-        number += str[i] - '0' + number * 10;
-    }
 }
