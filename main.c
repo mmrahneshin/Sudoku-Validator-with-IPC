@@ -2,17 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
-int dimension[3];
-int start;
+#define MYFIFO1 "/tmp/myfifo1"
+#define MYFIFO2 "/tmp/myfifo2"
+#define MYFIFO3 "/tmp/myfifo3"
 
 void remove_new_line(char *str);
 
 void remove_space(char *str);
-
-void save_dimension(char *str);
-
-void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]]);
 
 int main()
 {
@@ -37,64 +38,34 @@ int main()
     remove_space(string);
     string[strlen(string) - 1] = '\0';
 
-    save_dimension(string);
-    char sudoku[dimension[0]][dimension[0]];
+    int fd1, fd2, fd3, fd4;
 
-    set_sudoku_array(string, sudoku);
+    mkfifo(MYFIFO1, 0666);
+    mkfifo(MYFIFO2, 0666);
+    mkfifo(MYFIFO3, 0666);
 
-    // for (int i = 0; i < 9; i++)
-    // {
-    //     for (int j = 0; j < 9; j++)
-    //     {
-    //         printf("%c ", sudoku[i][j]);
-    //     }
-    //     printf("\n");
-    // }
+    pid_t decoder, sotoon, satr, mostatil;
+    // printf("%s\n", string);
 
+    decoder = fork();
+    if (decoder == 0)
+    {
+        char *args[] = {"./decoder", NULL};
+        execvp(args[0], args);
+    }
+
+    fd1 = open(MYFIFO1, O_WRONLY);
+    write(fd1, string, strlen(string) + 1);
+    close(fd1);
+
+    char str[2000];
+    fd2 = open(MYFIFO2, O_RDONLY);
+    int index = read(fd2, str, sizeof(str));
+    str[index] = '\0';
+    close(fd2);
+
+    printf("%s\n", str);
     return 0;
-}
-
-void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]])
-{
-    int i = 0, j = 0, k;
-
-    for (k = start; str[k]; k++)
-    {
-        if (str[k] == '#')
-        {
-            j = 0;
-            i++;
-            continue;
-        }
-
-        sudoku[i][j] = str[k];
-        j++;
-    }
-}
-
-void save_dimension(char *str)
-{
-    int i;
-    int number = 0;
-    int count = 0;
-    for (i = 0; str[i]; i++)
-    {
-        if (str[i] == '*')
-        {
-            dimension[count] = number;
-            number = 0;
-            count++;
-            continue;
-        }
-
-        if (!isdigit(str[i]) && str[i] != '*')
-        {
-            dimension[count] = number;
-            start = i;
-            break;
-        }
-        number += str[i] - '0' + number * 10;
-    }
 }
 
 void remove_new_line(char *str)
