@@ -7,6 +7,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define MYFIFO1 "/tmp/myfifo1"
+#define MYFIFO2 "/tmp/myfifo2"
+#define MYFIFO3 "/tmp/myfifo3"
+#define MYFIFO4 "/tmp/myfifo4"
+#define MYFIFO5 "/tmp/myfifo5"
+#define MYFIFO6 "/tmp/myfifo6"
+#define MYFIFO7 "/tmp/myfifo7"
+
 int dimension[3];
 int start;
 
@@ -28,47 +36,202 @@ int check_mostatil(char sudoku[dimension[0]][dimension[0]]);
 
 int main()
 {
-    FILE *ptr;
     char string[1000];
-    ptr = fopen("test.txt", "r");
 
-    if (NULL == ptr)
+    pid_t decode, sotoon, satr, mostatil;
+
+    decode = fork();
+    if (decode > 0)
     {
-        printf("file can't be opened \n");
+        sotoon = fork();
+        if (sotoon > 0)
+        {
+            satr = fork();
+            if (satr > 0)
+            {
+                mostatil = fork();
+            }
+        }
     }
 
-    int i = 0;
-    while (!feof(ptr))
+    if (decode == 0)
     {
-        string[i] = fgetc(ptr);
-        i++;
+        char str[1000];
+        mkfifo(MYFIFO1, 0666);
+
+        int f1 = open(MYFIFO1, O_RDONLY);
+        read(f1, str, 1000);
+        close(f1);
+        // printf("%s decode\n", str);
+
+        decoder(str);
+
+        mkfifo(MYFIFO2, 0666);
+        f1 = open(MYFIFO2, O_WRONLY);
+        write(f1, str, strlen(str) + 1);
+        close(f1);
+
+        mkfifo(MYFIFO3, 0666);
+        f1 = open(MYFIFO3, O_WRONLY);
+        write(f1, str, strlen(str) + 1);
+        close(f1);
+
+        mkfifo(MYFIFO4, 0666);
+        f1 = open(MYFIFO4, O_WRONLY);
+        write(f1, str, strlen(str) + 1);
+        close(f1);
     }
-    fclose(ptr);
+    else if (sotoon == 0)
+    {
+        char str[2000];
+        mkfifo(MYFIFO2, 0666);
 
-    remove_new_line(string);
-    remove_space(string);
-    string[strlen(string) - 1] = '\0';
-    decoder(string);
+        int f1 = open(MYFIFO2, O_RDONLY);
+        read(f1, str, 2000);
+        close(f1);
 
-    save_dimension(string);
-    char sudoku[dimension[0]][dimension[0]];
+        save_dimension(str);
 
-    set_sudoku_array(string, sudoku);
+        char sudoku[dimension[0]][dimension[0]];
+        set_sudoku_array(str, sudoku);
 
-    int sotoonbool = check_sotoon(sudoku);
-    int satrbool = check_satr(sudoku);
-    int mostatilbool = check_mostatil(sudoku);
+        int sotoonbool = check_sotoon(sudoku);
 
-    // for (int i = 0; i < 9; i++)
-    // {
-    //     for (int j = 0; j < 9; j++)
-    //     {
-    //         printf("%c ", sudoku[i][j]);
-    //     }
-    //     printf("\n");
-    // }
+        mkfifo(MYFIFO5, 0666);
+        f1 = open(MYFIFO5, O_WRONLY);
 
-    printf("%d\n", mostatilbool);
+        if (sotoonbool == 0)
+        {
+            write(f1, "true", strlen("true") + 1);
+        }
+        else
+        {
+            write(f1, "false", strlen("false") + 1);
+        }
+        close(f1);
+    }
+
+    else if (satr == 0)
+    {
+        char str[2000];
+        mkfifo(MYFIFO3, 0666);
+
+        int f1 = open(MYFIFO3, O_RDONLY);
+        read(f1, str, 2000);
+        close(f1);
+
+        save_dimension(str);
+
+        char sudoku[dimension[0]][dimension[0]];
+        set_sudoku_array(str, sudoku);
+
+        int satrbool = check_satr(sudoku);
+
+        mkfifo(MYFIFO7, 0666);
+        f1 = open(MYFIFO7, O_WRONLY);
+
+        if (satrbool == 0)
+        {
+            write(f1, "true", strlen("true"));
+        }
+        else
+        {
+            write(f1, "false", strlen("false"));
+        }
+        close(f1);
+    }
+    else if (mostatil == 0)
+    {
+
+        char str[2000];
+        mkfifo(MYFIFO4, 0666);
+
+        int f1 = open(MYFIFO4, O_RDONLY);
+        read(f1, str, 2000);
+        close(f1);
+
+        save_dimension(str);
+
+        char sudoku[dimension[0]][dimension[0]];
+        set_sudoku_array(str, sudoku);
+        int mostatilbool = check_mostatil(sudoku);
+
+        mkfifo(MYFIFO6, 0666);
+        f1 = open(MYFIFO6, O_WRONLY);
+
+        if (mostatilbool == 0)
+        {
+            write(f1, "true", strlen("true"));
+        }
+        else
+        {
+            write(f1, "false", strlen("false"));
+        }
+        close(f1);
+        // printf("mostatil\n");
+    }
+    else
+    {
+        // parent ---------------------------------------------------
+        FILE *ptr;
+        ptr = fopen("test.txt", "r");
+
+        if (NULL == ptr)
+        {
+            printf("file can't be opened \n");
+            return 0;
+        }
+
+        int i = 0;
+        while (!feof(ptr))
+        {
+            string[i] = fgetc(ptr);
+            i++;
+        }
+        fclose(ptr);
+
+        remove_new_line(string);
+        remove_space(string);
+        string[strlen(string) - 1] = '\0';
+
+        mkfifo(MYFIFO1, 0666);
+        int f1 = open(MYFIFO1, O_WRONLY);
+        write(f1, string, strlen(string) + 1);
+        close(f1);
+
+        char sot[5];
+        mkfifo(MYFIFO5, 0666);
+        int f2 = open(MYFIFO5, O_RDONLY);
+        read(f2, sot, 5);
+        close(f2);
+        // printf("%s sotoon\n", sot);
+
+        mkfifo(MYFIFO7, 0666);
+        char sat[6];
+        int f3 = open(MYFIFO7, O_RDONLY);
+        read(f3, sat, 6);
+        close(f3);
+        // printf("%s satr\n", sat);
+
+        mkfifo(MYFIFO6, 0666);
+        char mos[6];
+        int f4 = open(MYFIFO6, O_RDONLY);
+        read(f4, mos, 6);
+        close(f4);
+        // printf("%s mostatil\n", mos);
+
+        if (strstr(mos, "true") != NULL && strstr(sat, "true") != NULL && strstr(sot, "true") != NULL)
+        {
+            printf("%s\n", "Sudoku Puzzle constraints satisfied!!!");
+        }
+        else
+        {
+            printf("%s\n", "Sudoku Puzzle is Wrong!!");
+        }
+
+        // parent ---------------------------------------------------
+    }
+
     return 0;
 }
 
@@ -168,6 +331,7 @@ void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]])
             i++;
             continue;
         }
+        // printf("%c\n", str[k]);
         sudoku[i][j] = str[k];
         j++;
     }
