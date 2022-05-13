@@ -7,14 +7,24 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define MYFIFO1 "/tmp/myfifo1"
-#define MYFIFO2 "/tmp/myfifo2"
-#define MYFIFO3 "/tmp/myfifo3"
-#define MYFIFO4 "/tmp/myfifo4"
+int dimension[3];
+int start;
 
 void remove_new_line(char *str);
 
 void remove_space(char *str);
+
+void decoder(char *str);
+
+void save_dimension(char *str);
+
+void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]]);
+
+int check_sotoon(char sudoku[dimension[0]][dimension[0]]);
+
+int check_satr(char sudoku[dimension[0]][dimension[0]]);
+
+int check_mostatil(char sudoku[dimension[0]][dimension[0]]);
 
 int main()
 {
@@ -38,47 +48,187 @@ int main()
     remove_new_line(string);
     remove_space(string);
     string[strlen(string) - 1] = '\0';
+    decoder(string);
 
-    int fd1, fd2, fd3, fd4;
+    save_dimension(string);
+    char sudoku[dimension[0]][dimension[0]];
 
-    mkfifo(MYFIFO1, 0666);
-    mkfifo(MYFIFO2, 0666);
-    mkfifo(MYFIFO3, 0666);
-    mkfifo(MYFIFO4, 0666);
+    set_sudoku_array(string, sudoku);
 
-    pid_t decoder, sotoon, satr, mostatil;
+    int sotoonbool = check_sotoon(sudoku);
+    int satrbool = check_satr(sudoku);
+    int mostatilbool = check_mostatil(sudoku);
 
-    decoder = fork();
-    if (decoder == 0)
-    {
-        char *args[] = {"./decoder", NULL};
-        execvp(args[0], args);
-    }
-    sotoon = fork();
-    if (sotoon == 0)
-    {
-        char *args[] = {"./sotoon", NULL};
-        execvp(args[0], args);
-    }
-    satr = fork();
-    if (satr == 0)
-    {
-        char *args[] = {"./satr", NULL};
-        execvp(args[0], args);
-    }
+    // for (int i = 0; i < 9; i++)
+    // {
+    //     for (int j = 0; j < 9; j++)
+    //     {
+    //         printf("%c ", sudoku[i][j]);
+    //     }
+    //     printf("\n");
+    // }
 
-    fd1 = open(MYFIFO1, O_WRONLY);
-    write(fd1, string, strlen(string) + 1);
-    close(fd1);
-
-    char str[20];
-    fd2 = open(MYFIFO4, O_RDONLY);
-    int index = read(fd2, str, sizeof(str));
-    str[index] = '\0';
-    close(fd2);
-
-    printf("%s\n", str);
+    printf("%d\n", mostatilbool);
     return 0;
+}
+
+int check_sotoon(char sudoku[dimension[0]][dimension[0]])
+{
+    int sw = 0;
+    for (int i = 0; i < dimension[0]; i++)
+    {
+        for (int j = 0; j < dimension[0]; j++)
+        {
+            for (int k = 0; k < dimension[0]; k++)
+            {
+                if (j != k)
+                {
+                    int diff = sudoku[j][i] - sudoku[k][i];
+                    // printf("%c %c %d\n", sudoku[j][i], sudoku[k][i], diff);
+
+                    if (diff == 0 || diff == -32 || diff == 32)
+                    {
+                        sw = 1;
+                        return sw;
+                    }
+                }
+            }
+        }
+    }
+    return sw;
+}
+
+int check_satr(char sudoku[dimension[0]][dimension[0]])
+{
+    int sw = 0;
+    for (int i = 0; i < dimension[0]; i++)
+    {
+        for (int j = 0; j < dimension[0]; j++)
+        {
+            for (int k = 0; k < dimension[0]; k++)
+            {
+                if (j != k)
+                {
+                    int diff = sudoku[i][j] - sudoku[i][k];
+                    // printf("%c %c %d\n", sudoku[i][j], sudoku[i][k], diff);
+
+                    if (diff == 0 || diff == -32 || diff == 32)
+                    {
+                        sw = 1;
+                        return sw;
+                    }
+                }
+            }
+        }
+    }
+    return sw;
+}
+
+int check_mostatil(char sudoku[dimension[0]][dimension[0]])
+{
+    int sw = 0;
+    for (int i = 0; i < dimension[0]; i += dimension[1])
+    {
+        for (int j = 0; j < dimension[0]; j += dimension[2])
+        {
+            for (int k = i; k < i + dimension[1]; k++)
+            {
+                for (int l = j; l < j + dimension[2]; l++)
+                {
+                    for (int m = i; m < i + dimension[1]; m++)
+                    {
+                        for (int n = j; n < j + dimension[2]; n++)
+                        {
+                            if (k != m || l != n)
+                            {
+                                int diff = sudoku[k][l] - sudoku[m][n];
+                                if (diff == 0 || diff == -32 || diff == 32)
+                                {
+                                    sw = 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return sw;
+}
+
+void set_sudoku_array(char *str, char sudoku[dimension[0]][dimension[0]])
+{
+    int i = 0, j = 0, k;
+
+    for (k = start; str[k]; k++)
+    {
+        if (str[k] == '#')
+        {
+            j = 0;
+            i++;
+            continue;
+        }
+        sudoku[i][j] = str[k];
+        j++;
+    }
+}
+
+void save_dimension(char *str)
+{
+    int i;
+    int number = 0;
+    int count = 0;
+    for (i = 0; str[i]; i++)
+    {
+        if (str[i] == '*')
+        {
+            dimension[count] = number;
+            number = 0;
+            count++;
+            continue;
+        }
+
+        if (!isdigit(str[i]) && str[i] != '*')
+        {
+            dimension[count] = number;
+            start = i;
+            break;
+        }
+        number += str[i] - '0' + number * 10;
+    }
+}
+
+void decoder(char *str)
+{
+    char ch;
+    int key = 2;
+
+    // get the section that must be encrypte through pipe
+
+    // decode by caesar cipher
+    int i;
+    for (i = 0; str[i] != '\0'; ++i)
+    {
+        ch = str[i];
+        if (ch >= 'a' && ch <= 'z')
+        {
+            ch = ch - key;
+            if (ch > 'z')
+            {
+                ch = ch - 'z' + 'a' - 1;
+            }
+            str[i] = ch;
+        }
+        else if (ch >= 'A' && ch <= 'Z')
+        {
+            ch = ch - key;
+            if (ch > 'Z')
+            {
+                ch = ch - 'Z' + 'A' - 1;
+            }
+            str[i] = ch;
+        }
+    }
 }
 
 void remove_new_line(char *str)
